@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Value Checklist</title>
+<style>
+  :root { --ink:#1a1a1a; --muted:#666; --line:#ddd; --bg:#fafafa; --card:#fff;
+          --green:#1e7d32; --amber:#a86a00; --red:#b3261e; }
+  * { box-sizing:border-box; }
+  body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+         color:var(--ink); background:var(--bg); margin:0; padding:0; line-height:1.5; }
+  .wrap { max-width:640px; margin:0 auto; padding:20px 16px 48px; }
+  header { margin-bottom:18px; }
+  h1 { font-size:1.7rem; margin:0 0 4px; }
+  .sub { color:var(--muted); margin:0; font-size:.95rem; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:10px;
+          padding:16px; margin-bottom:14px; }
+  .card h2 { font-size:1.05rem; margin:0 0 10px; }
+  label.f { display:block; font-size:.85rem; color:var(--muted); margin:10px 0 4px; }
+  input[type=text], input[type=number] {
+    width:100%; font-size:1rem; padding:10px 12px; border:1px solid var(--line);
+    border-radius:8px; background:#fff; }
+  input:disabled { background:#f0f0f0; color:#999; }
+  .row2 { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .checkline { display:flex; align-items:center; gap:10px; margin-top:12px; font-size:.95rem; }
+  .checkline input { width:22px; height:22px; }
+  .presets { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:6px; }
+  .note { font-size:.82rem; color:var(--muted); min-height:1.2em; margin:6px 0 0; }
+  .q { margin:12px 0; }
+  .q p { margin:0 0 6px; font-size:.95rem; }
+  .seg { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .seg button { font-size:1rem; padding:12px; border:1px solid var(--line); border-radius:8px;
+                background:#fff; cursor:pointer; min-height:48px; }
+  .seg button.on-yes { background:var(--green); color:#fff; border-color:var(--green); }
+  .seg button.on-no { background:#888; color:#fff; border-color:#888; }
+  .run { width:100%; font-size:1.1rem; font-weight:700; padding:14px; border:none;
+         border-radius:10px; background:#1a1a1a; color:#fff; cursor:pointer; margin:6px 0 18px; }
+  .run:active { transform:scale(.99); }
+  .lens { background:var(--card); border:1px solid var(--line); border-radius:10px;
+          padding:14px 16px; margin-bottom:10px; }
+  .lens .top { display:flex; align-items:baseline; gap:10px; }
+  .lens .name { font-weight:700; font-size:1.02rem; }
+  .badge { font-size:1.25rem; font-weight:700; }
+  .pass { color:var(--green); } .maybe { color:var(--amber); } .fail { color:var(--red); }
+  .rule { font-size:.8rem; color:var(--muted); margin:4px 0; }
+  .why { margin:6px 0 0; font-size:.95rem; }
+  #summary { font-size:1.05rem; font-weight:600; background:#eef4ee; border:1px solid #cfe0cf;
+            border-radius:10px; padding:14px 16px; margin:16px 0; }
+  #warn { display:none; background:#fff7e6; border:1px solid #e8c96a; border-radius:10px;
+          padding:14px 16px; margin:0 0 16px; font-size:.95rem; }
+  footer { margin-top:28px; font-size:.8rem; color:var(--muted); border-top:1px solid var(--line); padding-top:12px; }
+  .btn { font-size:.95rem; padding:10px 14px; border:1px solid var(--line); border-radius:8px;
+         background:#fff; cursor:pointer; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <h1>The Value Checklist</h1>
+    <p class="sub">Run any company through six investors' lenses. Same bars every time, so stocks compare apples to apples.</p>
+  </header>
+
+  <div class="card">
+    <h2>Try an example</h2>
+    <div class="presets">
+      <button class="btn" id="pAcc">Accenture (ACN)</button>
+      <button class="btn" id="pPay">PayPal (PYPL)</button>
+    </div>
+    <p class="note" id="presetNote"></p>
+  </div>
+
+  <div class="card">
+    <h2>The company</h2>
+    <div class="row2">
+      <div><label class="f" for="cname">Company name</label><input type="text" id="cname" placeholder="e.g. Accenture"></div>
+      <div><label class="f" for="tick">Ticker</label><input type="text" id="tick" placeholder="e.g. ACN"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>The numbers</h2>
+    <div class="row2">
+      <div><label class="f" for="roic">ROIC (%)</label><input type="number" id="roic" step="any" placeholder="e.g. 27.1"></div>
+      <div><label class="f" for="pe">P/E ratio</label><input type="number" id="pe" step="any" placeholder="e.g. 14.1"></div>
+      <div><label class="f" for="fcf">FCF yield (%)</label><input type="number" id="fcf" step="any" placeholder="e.g. 12"></div>
+      <div><label class="f" for="debt">Net debt ÷ FCF (×)</label><input type="number" id="debt" step="any" placeholder="e.g. 0.67"></div>
+    </div>
+    <div class="checkline"><input type="checkbox" id="cash"><label for="cash">Net cash (no net debt)</label></div>
+    <label class="f" for="growth">Revenue growth, recent year (%)</label>
+    <input type="number" id="growth" step="any" placeholder="e.g. 3.5">
+  </div>
+
+  <div class="card">
+    <h2>The moat questions</h2>
+    <div class="q"><p>Can it raise prices without losing customers?</p>
+      <div class="seg" data-q="m1"><button data-v="y">Yes</button><button data-v="n" class="on-no">No</button></div></div>
+    <div class="q"><p>Would customers struggle to switch away?</p>
+      <div class="seg" data-q="m2"><button data-v="y">Yes</button><button data-v="n" class="on-no">No</button></div></div>
+    <div class="q"><p>Does it have a cost advantage from scale?</p>
+      <div class="seg" data-q="m3"><button data-v="y">Yes</button><button data-v="n" class="on-no">No</button></div></div>
+    <div class="q"><p>Is the balance sheet strong enough to survive a bad 2 years?</p>
+      <div class="seg" data-q="m4"><button data-v="y">Yes</button><button data-v="n" class="on-no">No</button></div></div>
+    <div class="q"><p>Is there room to reinvest profits at high returns?</p>
+      <div class="seg" data-q="m5"><button data-v="y">Yes</button><button data-v="n" class="on-no">No</button></div></div>
+    <div class="q"><p>Does AI threaten its core business model — not just the cycle?</p>
+      <div class="seg" data-q="m6"><button data-v="y">Yes</button><button data-v="n" class="on-no">No</button></div></div>
+  </div>
+
+  <button class="run" id="run">Run the checklist</button>
+
+  <div id="warn"></div>
+  <div id="summary" style="display:none"></div>
+  <div id="results"></div>
+
+  <footer>
+    The Value Checklist is an educational tool with simplified scoring. Real analysis uses multi-year trends, filings, and judgment — this is a starting filter, not a conclusion. Not investment advice.
+  </footer>
+
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var moat = { m1:false, m2:false, m3:false, m4:false, m5:false, m6:false };
+
+  function $(id){ return document.getElementById(id); }
+  function num(id){
+    var raw = $(id).value.trim();
+    if (raw === "") return null;
+    var v = parseFloat(raw);
+    return isNaN(v) ? null : v;
+  }
+  function fmt(v, d){ return v.toFixed(d === undefined ? 1 : d); }
+
+  // segmented yes/no toggles
+  document.querySelectorAll(".seg").forEach(function(seg){
+    var q = seg.getAttribute("data-q");
+    seg.querySelectorAll("button").forEach(function(b){
+      b.addEventListener("click", function(){
+        var yes = b.getAttribute("data-v") === "y";
+        moat[q] = yes;
+        seg.querySelectorAll("button").forEach(function(x){ x.classList.remove("on-yes","on-no"); });
+        b.classList.add(yes ? "on-yes" : "on-no");
+      });
+    });
+  });
+
+  // net-cash checkbox disables the debt field
+  $("cash").addEventListener("change", function(){
+    $("debt").disabled = this.checked;
+    if (this.checked) $("debt").value = "";
+  });
+
+  function debtState(){
+    if ($("cash").checked) return { kind:"cash" };
+    var d = num("debt");
+    if (d === null) return { kind:"missing" };
+    return { kind:"num", v:d };
+  }
+
+  function score(){
+    var name = $("cname").value.trim(), tick = $("tick").value.trim().toUpperCase();
+    var label = name || tick || "This company";
+    if (name && tick) label = name + " (" + tick + ")";
+    var roic = num("roic"), pe = num("pe"), fcf = num("fcf"),
+        growth = num("growth"), debt = debtState();
+    var out = [];
+
+    // Buffett: high ROIC + low debt
+    (function(){
+      var rule = "Rule: ROIC \u2265 15% and net debt/FCF \u2264 1.5\u00d7 (or net cash).";
+      if (roic === null || debt.kind === "missing")
+        return out.push({ n:"Buffett — quality compounder", s:"maybe", rule:rule,
+          why:"Need " + [roic===null?"ROIC":null, debt.kind==="missing"?"a debt figure":null].filter(Boolean).join(" and ") + " to score this lens." });
+      var dq = debt.kind === "cash" ? "net cash" : "net debt/FCF " + fmt(debt.v) + "\u00d7";
+      var rq = "ROIC " + fmt(roic) + "% " + (roic >= 15 ? "clears" : "misses") + " the 15% bar; " + dq +
+               (debt.kind === "cash" || debt.v <= 1.5 ? " — balance sheet is fine." : " — too much debt for Buffett.");
+      if (roic >= 15 && (debt.kind === "cash" || debt.v <= 1.5))
+        out.push({ n:"Buffett — quality compounder", s:"pass", rule:rule, why:rq + (roic >= 20 ? " At " + fmt(roic) + "%, this is excellent, not just good." : "") });
+      else if (roic >= 10 || (roic >= 15 && debt.kind === "num" && debt.v <= 2.5))
+        out.push({ n:"Buffett — quality compounder", s:"maybe", rule:rule, why:rq + " Close, but not a clean pass." });
+      else
+        out.push({ n:"Buffett — quality compounder", s:"fail", rule:rule, why:rq });
+    })();
+
+    // Greenblatt: cheap + high ROIC (magic formula in plain clothes)
+    (function(){
+      var rule = "Rule: FCF yield \u2265 8% and ROIC \u2265 15%.";
+      if (roic === null || fcf === null)
+        return out.push({ n:"Greenblatt — cheap and good", s:"maybe", rule:rule,
+          why:"Need " + [roic===null?"ROIC":null, fcf===null?"FCF yield":null].filter(Boolean).join(" and ") + " to score this lens." });
+      var cheap = fcf >= 8, good = roic >= 15;
+      var why = "FCF yield " + fmt(fcf) + "% " + (cheap ? "clears" : "misses") + " 8%; ROIC " + fmt(roic) + "% " + (good ? "clears" : "misses") + " 15%.";
+      out.push({ n:"Greenblatt — cheap and good", s:(cheap && good)?"pass":(cheap||good)?"maybe":"fail", rule:rule,
+        why: why + ((cheap && good) ? " Cheap and good — the magic formula's two ingredients." : "") });
+    })();
+
+    // Pabrai: low P/E + downside protection
+    (function(){
+      var rule = "Rule: P/E \u2264 15 and net debt/FCF \u2264 1.5\u00d7 (or net cash).";
+      if (pe === null || debt.kind === "missing")
+        return out.push({ n:"Pabrai — heads I win, tails I don't lose much", s:"maybe", rule:rule,
+          why:"Need " + [pe===null?"P/E":null, debt.kind==="missing"?"a debt figure":null].filter(Boolean).join(" and ") + " to score this lens." });
+      var cheap = pe <= 15, prot = debt.kind === "cash" || debt.v <= 1.5;
+      var why = "P/E " + fmt(pe) + " is " + (cheap ? "in" : "above") + " Pabrai territory (\u226415); " +
+                (debt.kind === "cash" ? "net cash protects the downside." :
+                 "net debt/FCF " + fmt(debt.v) + "\u00d7 " + (prot ? "keeps the downside contained." : "leaves real downside."));
+      var s = (cheap && prot) ? "pass" : (cheap || (pe <= 18 && prot)) ? "maybe" : "fail";
+      out.push({ n:"Pabrai — heads I win, tails I don't lose much", s:s, rule:rule, why:why });
+    })();
+
+    // Klarman: margin of safety + fortress balance sheet
+    (function(){
+      var rule = "Rule: cheap (FCF yield \u2265 8% or P/E \u226412) + strong balance sheet (net cash or net debt/FCF \u2264 1.0\u00d7) + survives a bad 2 years.";
+      var parts = [];
+      if (fcf === null && pe === null) parts.push("a valuation figure");
+      if (debt.kind === "missing") parts.push("a debt figure");
+      if (parts.length)
+        return out.push({ n:"Klarman — margin of safety", s:"maybe", rule:rule, why:"Need " + parts.join(" and ") + " to score this lens." });
+      var mos = (fcf !== null && fcf >= 8) || (pe !== null && pe <= 12);
+      var strong = debt.kind === "cash" || (debt.kind === "num" && debt.v <= 1.0);
+      var n = (mos?1:0) + (strong?1:0) + (moat.m4?1:0);
+      var why = (mos ? "Priced with a margin of safety" : "No margin of safety at this price") + "; " +
+                (strong ? "balance sheet is a fortress" : "balance sheet wouldn't love a storm") + "; " +
+                (moat.m4 ? "you say it survives a bad 2 years." : "you don't think it survives a bad 2 years.");
+      out.push({ n:"Klarman — margin of safety", s: n===3?"pass":n===2?"maybe":"fail", rule:rule, why:why });
+    })();
+
+    // Lynch: growth at a reasonable price (PEG-style)
+    (function(){
+      var rule = "Rule: PEG (P/E \u00f7 growth) \u2264 1.5; needs positive growth.";
+      if (pe === null || growth === null)
+        return out.push({ n:"Lynch — growth at a reasonable price", s:"maybe", rule:rule,
+          why:"Need " + [pe===null?"P/E":null, growth===null?"revenue growth":null].filter(Boolean).join(" and ") + " to score this lens." });
+      if (growth <= 0)
+        return out.push({ n:"Lynch — growth at a reasonable price", s:"maybe", rule:rule,
+          why:"Growth is " + fmt(growth) + "% — PEG needs positive growth. This is a turnaround or value story, not a Lynch growth story." });
+      var peg = pe / growth;
+      var why = "P/E " + fmt(pe) + " on " + fmt(growth) + "% growth = PEG " + peg.toFixed(2) + " — " +
+                (peg <= 1.5 ? "reasonable price for the growth." : peg <= 2.5 ? "a bit rich for the growth." : "too much paid for too little growth.");
+      out.push({ n:"Lynch — growth at a reasonable price", s: peg<=1.5?"pass":peg<=2.5?"maybe":"fail", rule:rule, why:why });
+    })();
+
+    // Sleep: reinvestment runway — moat + somewhere to put the money
+    (function(){
+      var rule = "Rule: 3+ of 4 moat answers yes (pricing power, switching costs, scale, reinvestment room) and growth \u2265 3%.";
+      var mcount = (moat.m1?1:0)+(moat.m2?1:0)+(moat.m3?1:0)+(moat.m5?1:0);
+      if (growth === null)
+        return out.push({ n:"Sleep — reinvestment runway", s:"maybe", rule:rule,
+          why:"Moat answers: " + mcount + " of 4 yes. Enter revenue growth to finish scoring this lens." });
+      var why = "Moat answers: " + mcount + " of 4 yes; growth " + fmt(growth) + "% " + (growth >= 3 ? "gives it room to compound." : "is too thin to compound on.");
+      var s = (mcount >= 3 && growth >= 3) ? "pass" : (mcount >= 2 && growth >= 1) ? "maybe" : "fail";
+      out.push({ n:"Sleep — reinvestment runway", s:s, rule:rule, why:why });
+    })();
+
+    // disruption check
+    var warn = $("warn");
+    if (moat.m6) {
+      warn.style.display = "block";
+      warn.innerHTML = "<strong>Disruption check:</strong> you flagged AI as a threat to the business model itself, not just the cycle. " +
+        "Treat the moat-dependent scores (Buffett, Sleep) with extra skepticism — a cheap multiple may be a derating, not a bargain.";
+    } else { warn.style.display = "none"; warn.innerHTML = ""; }
+
+    // render lenses
+    var html = "";
+    var buckets = { pass:[], maybe:[], fail:[] };
+    out.forEach(function(r){
+      buckets[r.s].push(r.n.split(" — ")[0]);
+      var badge = r.s === "pass" ? '<span class="badge pass">\u2713</span>'
+                : r.s === "maybe" ? '<span class="badge maybe">?</span>'
+                : '<span class="badge fail">\u2717</span>';
+      html += '<div class="lens"><div class="top">' + badge +
+              '<span class="name">' + r.n + '</span></div>' +
+              '<p class="rule">' + r.rule + '</p><p class="why">' + r.why + '</p></div>';
+    });
+    $("results").innerHTML = html;
+
+    var sum = $("summary");
+    sum.style.display = "block";
+    var bits = [];
+    if (buckets.pass.length) bits.push("\u2713 Passes: " + buckets.pass.join(", "));
+    if (buckets.maybe.length) bits.push("? Borderline: " + buckets.maybe.join(", "));
+    if (buckets.fail.length) bits.push("\u2717 Fails: " + buckets.fail.join(", "));
+    sum.textContent = label + " — " + bits.join(" · ");
+    window.scrollTo({ top: $("summary").offsetTop - 12, behavior: "smooth" });
+  }
+
+  $("run").addEventListener("click", score);
+
+  function resetMoat(){
+    ["m1","m2","m3","m4","m5","m6"].forEach(function(q){ moat[q] = false; });
+    document.querySelectorAll(".seg").forEach(function(seg){
+      seg.querySelectorAll("button").forEach(function(x){ x.classList.remove("on-yes","on-no"); });
+      seg.querySelector('[data-v="n"]').classList.add("on-no");
+    });
+  }
+  function set(id, v){ $(id).value = (v === null || v === undefined) ? "" : v; }
+
+  $("pAcc").addEventListener("click", function(){
+    set("cname","Accenture"); set("tick","ACN");
+    set("roic","27.1"); set("pe","14.1"); set("fcf","12");
+    $("cash").checked = true; $("debt").disabled = true; set("debt","");
+    set("growth","3.5");
+    resetMoat();
+    $("presetNote").textContent = "Example figures — Sep 2026 snapshot. Set the moat questions yourself.";
+    score();
+  });
+
+  $("pPay").addEventListener("click", function(){
+    set("cname","PayPal"); set("tick","PYPL");
+    set("roic","18"); set("pe","9.6"); set("fcf","13.6");
+    $("cash").checked = false; $("debt").disabled = false; set("debt","");
+    set("growth","5");
+    resetMoat();
+    $("presetNote").textContent = "Example figures — Sep 2026 snapshot. ROIC shown as ~18%: ROE of 24.5% used as a fallback. Add a debt figure to score the balance-sheet lenses.";
+    score();
+  });
+})();
+</script>
+</body>
+</html>
