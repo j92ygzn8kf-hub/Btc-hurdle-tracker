@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Fiat Melt Calculator</title>
+<style>
+  :root{
+    --bg:#0e1116; --card:#161b23; --line:#262d38;
+    --txt:#e9edf2; --mut:#9aa4b2;
+    --gold:#e8b64c; --teal:#4cc3a7; --red:#e06c6c;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--bg); color:var(--txt);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    line-height:1.55; padding-bottom:48px;
+  }
+  .wrap{max-width:720px;margin:0 auto;padding:20px 16px}
+  header{margin:8px 0 20px}
+  h1{font-size:1.7rem;margin:0 0 6px;letter-spacing:-0.01em}
+  h1 .melt{color:var(--gold)}
+  .tag{color:var(--mut);margin:0;font-size:1rem}
+  .card{
+    background:var(--card);border:1px solid var(--line);
+    border-radius:12px;padding:16px;margin:14px 0;
+  }
+  .card h2{font-size:1.05rem;margin:0 0 12px}
+  label{display:block;font-size:.85rem;color:var(--mut);margin:12px 0 4px}
+  label .val{color:var(--txt);font-weight:600}
+  input[type=number],input[type=text]{
+    width:100%;padding:10px 12px;font-size:1rem;border-radius:8px;
+    border:1px solid var(--line);background:#0e1116;color:var(--txt);
+  }
+  input[type=range]{width:100%;accent-color:var(--gold);margin:6px 0 0}
+  .note{font-size:.82rem;color:var(--mut);margin-top:6px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  @media(max-width:480px){.grid2{grid-template-columns:1fr}}
+  .stat{background:#0e1116;border:1px solid var(--line);border-radius:10px;padding:12px}
+  .stat .k{font-size:.78rem;color:var(--mut);margin-bottom:4px}
+  .stat .v{font-size:1.35rem;font-weight:700}
+  .punch{
+    border-left:4px solid var(--gold);background:#1a1608;
+    padding:12px 14px;border-radius:0 10px 10px 0;margin:14px 0;font-size:1rem;
+  }
+  .punch strong{color:var(--gold)}
+  .legend{display:flex;gap:18px;font-size:.85rem;color:var(--mut);margin:4px 0 8px;flex-wrap:wrap}
+  .dot{display:inline-block;width:12px;height:4px;border-radius:2px;margin-right:6px;vertical-align:middle}
+  canvas{width:100%;height:260px;display:block}
+  .tblwrap{overflow-x:auto;max-height:340px;overflow-y:auto;border:1px solid var(--line);border-radius:10px}
+  table{width:100%;border-collapse:collapse;font-size:.85rem;min-width:480px}
+  thead th{
+    position:sticky;top:0;background:#1d232d;text-align:right;
+    padding:8px 10px;color:var(--mut);font-weight:600;white-space:nowrap;
+  }
+  thead th:first-child,tbody td:first-child{text-align:left}
+  tbody td{padding:7px 10px;border-top:1px solid var(--line);text-align:right;white-space:nowrap}
+  tbody tr:nth-child(even) td{background:rgba(255,255,255,.02)}
+  footer{color:var(--mut);font-size:.78rem;margin-top:28px;border-top:1px solid var(--line);padding-top:14px}
+  .pos{color:var(--teal)} .neg{color:var(--red)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <h1>The <span class="melt">Fiat Melt</span> Calculator</h1>
+    <p class="tag">Your dollars melt while you save. See what your retirement money is actually worth.</p>
+  </header>
+
+  <div class="card">
+    <h2>Your plan</h2>
+    <label for="savings">Current savings ($)</label>
+    <input id="savings" type="number" min="0" step="100" value="50000">
+
+    <label for="monthly">Monthly contribution ($)</label>
+    <input id="monthly" type="number" min="0" step="10" value="500">
+
+    <label for="years">Years until retirement: <span class="val" id="yearsVal">30</span></label>
+    <input id="years" type="range" min="1" max="40" step="1" value="30">
+
+    <label for="nomReturn">Expected annual return (%)</label>
+    <input id="nomReturn" type="number" step="0.1" value="7">
+
+    <label for="debase">Annual dollar debasement (%)</label>
+    <input id="debase" type="number" step="0.1" value="7">
+    <p class="note">This is the rate new dollars flood the system (money-supply growth), not the CPI. The CPI measures a basket of prices; debasement measures the melting of the dollar itself.</p>
+  </div>
+
+  <div class="punch" id="punch"></div>
+
+  <div class="card">
+    <h2>Where you land</h2>
+    <div class="grid2">
+      <div class="stat"><div class="k">Nominal future value</div><div class="v" id="outNom">$0</div></div>
+      <div class="stat"><div class="k">Worth in today's dollars</div><div class="v" id="outPP">$0</div></div>
+      <div class="stat"><div class="k">Real return (approx)</div><div class="v" id="outReal">0%</div></div>
+      <div class="stat"><div class="k">Return needed just to stand still</div><div class="v" id="outBreak">0%</div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Nominal vs. real, year by year</h2>
+    <div class="legend">
+      <span><span class="dot" style="background:var(--gold)"></span>Nominal value</span>
+      <span><span class="dot" style="background:var(--teal)"></span>Purchasing power (today's dollars)</span>
+    </div>
+    <canvas id="chart"></canvas>
+  </div>
+
+  <div class="card">
+    <h2>The full schedule</h2>
+    <div class="tblwrap">
+      <table>
+        <thead>
+          <tr><th>Year</th><th>You put in</th><th>Nominal value</th><th>Worth today</th></tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <footer>
+    Educational tool with simplified math: monthly contributions are assumed at each month's end, and purchasing power is the nominal value discounted by the debasement rate. Simplified on purpose &mdash; real life has taxes, fees, and uneven returns. Not financial advice.
+  </footer>
+
+</div>
+
+<script>
+"use strict";
+
+function $(id){ return document.getElementById(id); }
+
+function fmt(n){
+  var r = Math.round(n);
+  var neg = r < 0;
+  var s = Math.abs(r).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  return (neg ? "-$" : "$") + s;
+}
+
+function abbr(n){
+  var a = Math.abs(n);
+  if (a >= 1e9) return "$" + (n/1e9).toFixed(1) + "B";
+  if (a >= 1e6) return "$" + (n/1e6).toFixed(1) + "M";
+  if (a >= 1e3) return "$" + (n/1e3).toFixed(0) + "k";
+  return "$" + Math.round(n);
+}
+
+var lastNom = [], lastPP = [], lastYears = 30;
+
+function nominalAt(P, m, rm, months){
+  if (months <= 0) return P;
+  if (rm === 0) return P + m * months;
+  var g = Math.pow(1 + rm, months);
+  return P * g + m * (g - 1) / rm;
+}
+
+function compute(){
+  var P = parseFloat($("savings").value) || 0;
+  var m = parseFloat($("monthly").value) || 0;
+  var years = parseInt($("years").value, 10) || 0;
+  var r = (parseFloat($("nomReturn").value) || 0) / 100;
+  var d = (parseFloat($("debase").value) || 0) / 100;
+  $("yearsVal").textContent = years;
+
+  var rm = r / 12;
+  var fv = nominalAt(P, m, rm, years * 12);
+  var pp = fv / Math.pow(1 + d, years);
+  var realPct = (r - d) * 100;
+
+  $("outNom").textContent = fmt(fv);
+  $("outPP").textContent = fmt(pp);
+
+  var realEl = $("outReal");
+  realEl.textContent = (realPct >= 0 ? "+" : "") + realPct.toFixed(1) + "% / yr";
+  realEl.className = "v " + (realPct >= 0 ? "pos" : "neg");
+
+  $("outBreak").textContent = (d * 100).toFixed(1) + "% / yr";
+
+  var punch;
+  if (realPct >= 0){
+    punch = "At <strong>" + (d*100).toFixed(1) + "%</strong> debasement, you need <strong>" +
+      (d*100).toFixed(1) + "% a year just to stand still</strong>. Your plan clears it by " +
+      realPct.toFixed(1) + " points &mdash; barely ahead of the melt.";
+  } else {
+    punch = "At <strong>" + (d*100).toFixed(1) + "%</strong> debasement, you need <strong>" +
+      (d*100).toFixed(1) + "% a year just to stand still</strong>. Your plan falls short by " +
+      Math.abs(realPct).toFixed(1) + " points a year &mdash; the melt is winning.";
+  }
+  $("punch").innerHTML = punch;
+
+  lastNom = []; lastPP = []; lastYears = years;
+  var rows = "";
+  for (var y = 0; y <= years; y++){
+    var nom = nominalAt(P, m, rm, y * 12);
+    var pval = nom / Math.pow(1 + d, y);
+    var contrib = P + m * 12 * y;
+    lastNom.push(nom); lastPP.push(pval);
+    rows += "<tr><td>" + y + "</td><td>" + fmt(contrib) + "</td><td>" +
+      fmt(nom) + "</td><td>" + fmt(pval) + "</td></tr>";
+  }
+  $("tbody").innerHTML = rows;
+
+  drawChart();
+}
+
+function drawChart(){
+  var canvas = $("chart");
+  var dpr = window.devicePixelRatio || 1;
+  var w = canvas.clientWidth, h = canvas.clientHeight;
+  if (!w || !h) return;
+  canvas.width = Math.round(w * dpr);
+  canvas.height = Math.round(h * dpr);
+  var ctx = canvas.getContext("2d");
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, w, h);
+
+  var padL = 54, padR = 10, padT = 14, padB = 26;
+  var cw = w - padL - padR, ch = h - padT - padB;
+  var years = lastYears;
+  var maxV = 0;
+  for (var i = 0; i < lastNom.length; i++){
+    if (lastNom[i] > maxV) maxV = lastNom[i];
+  }
+  if (maxV <= 0) maxV = 1;
+  maxV *= 1.05;
+
+  function X(i){ return padL + (years === 0 ? 0 : (i / years) * cw); }
+  function Y(v){ return padT + ch - (v / maxV) * ch; }
+
+  ctx.font = "11px -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
+  ctx.strokeStyle = "rgba(255,255,255,0.08)";
+  ctx.lineWidth = 1;
+  ctx.fillStyle = "rgba(255,255,255,0.55)";
+  ctx.textAlign = "right";
+  for (var g = 0; g <= 4; g++){
+    var v = maxV * g / 4;
+    ctx.beginPath(); ctx.moveTo(padL, Y(v)); ctx.lineTo(w - padR, Y(v)); ctx.stroke();
+    ctx.fillText(abbr(v), padL - 6, Y(v) + 4);
+  }
+
+  ctx.textAlign = "center";
+  var step = years > 20 ? 10 : 5;
+  for (var yy = 0; yy <= years; yy += step){
+    ctx.fillText(yy + "y", X(yy), h - 8);
+  }
+
+  function line(series, color){
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2.5;
+    ctx.lineJoin = "round";
+    ctx.beginPath();
+    for (var k = 0; k < series.length; k++){
+      var px = X(k), py = Y(series[k]);
+      if (k === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+    }
+    ctx.stroke();
+  }
+  line(lastNom, "#e8b64c");
+  line(lastPP, "#4cc3a7");
+}
+
+var inputs = ["savings", "monthly", "years", "nomReturn", "debase"];
+for (var i = 0; i < inputs.length; i++){
+  $(inputs[i]).addEventListener("input", compute);
+}
+window.addEventListener("resize", drawChart);
+
+compute();
+</script>
+</body>
+</html>
