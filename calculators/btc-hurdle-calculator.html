@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>The Bitcoin Hurdle Calculator</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --ink:#1c2330; --muted:#5d6b7f;
+    --line:#e3e7ee; --accent:#f7931a; --beat:#1a7f37; --miss:#9aa3b2;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-text-size-adjust:100%;
+  }
+  .wrap{max-width:720px;margin:0 auto;padding:20px 16px 48px;}
+  header h1{font-size:1.6rem;margin:0 0 6px;letter-spacing:-0.01em;}
+  header p{margin:0 0 20px;color:var(--muted);font-size:1rem;line-height:1.5;}
+  .card{
+    background:var(--card);border:1px solid var(--line);border-radius:12px;
+    padding:18px;margin:0 0 16px;box-shadow:0 1px 2px rgba(20,30,50,.04);
+  }
+  .card h2{font-size:1.05rem;margin:0 0 12px;}
+  label{display:block;font-size:.85rem;color:var(--muted);margin:0 0 6px;}
+  .field{margin:0 0 16px;}
+  .field:last-child{margin-bottom:0;}
+  input[type=number]{
+    width:100%;font-size:1.1rem;padding:10px 12px;border:1px solid var(--line);
+    border-radius:8px;color:var(--ink);background:#fff;
+  }
+  input[type=range]{width:100%;accent-color:var(--accent);height:32px;}
+  .horizon-row{display:flex;align-items:baseline;justify-content:space-between;}
+  .horizon-val{font-size:1.1rem;font-weight:700;}
+  .verdict{background:#101826;color:#fff;border:none;}
+  .verdict .big{font-size:1.25rem;font-weight:700;line-height:1.4;margin:0 0 8px;}
+  .verdict .sub{margin:0;color:#b9c4d4;font-size:.95rem;line-height:1.55;}
+  .stats{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .stat{border:1px solid var(--line);border-radius:10px;padding:12px;}
+  .stat .k{font-size:.78rem;color:var(--muted);margin:0 0 4px;}
+  .stat .v{font-size:1.25rem;font-weight:700;margin:0;overflow-wrap:anywhere;}
+  .stat .s{font-size:.78rem;color:var(--muted);margin:4px 0 0;}
+  .legend{display:flex;flex-wrap:wrap;gap:14px;font-size:.82rem;color:var(--muted);margin:12px 0 0;}
+  .legend span{display:inline-flex;align-items:center;gap:6px;}
+  .dot{width:10px;height:10px;border-radius:50%;display:inline-block;}
+  .sw{width:22px;height:0;border-top:3px dashed var(--accent);display:inline-block;}
+  svg{width:100%;height:auto;display:block;}
+  .note p{font-size:.85rem;color:var(--muted);line-height:1.6;margin:0 0 10px;}
+  .note p:last-child{margin-bottom:0;}
+  details{font-size:.85rem;color:var(--muted);}
+  details summary{cursor:pointer;font-weight:600;color:var(--ink);margin-bottom:8px;}
+  details table{border-collapse:collapse;width:100%;max-width:320px;}
+  details td, details th{border:1px solid var(--line);padding:4px 8px;text-align:right;font-size:.82rem;}
+  details td:first-child, details th:first-child{text-align:left;}
+  footer{margin-top:24px;padding-top:16px;border-top:1px solid var(--line);}
+  footer p{font-size:.82rem;color:var(--muted);line-height:1.55;margin:0;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <h1>The Bitcoin Hurdle Calculator</h1>
+    <p>Bitcoin is the money. Every other investment has to clear its hurdle rate.
+       Enter what you'd expect to earn elsewhere, and see how often Bitcoin actually beat it.</p>
+  </header>
+
+  <section class="card" aria-label="Inputs">
+    <h2>Your alternative investment</h2>
+    <div class="field">
+      <label for="principal">Lump sum ($)</label>
+      <input type="number" id="principal" inputmode="decimal" min="0" step="100" value="10000" />
+    </div>
+    <div class="field">
+      <label for="ret">Expected annual return (%)</label>
+      <input type="number" id="ret" inputmode="decimal" step="0.5" value="10" />
+    </div>
+    <div class="field">
+      <div class="horizon-row">
+        <label for="horizon" style="margin:0;">Time horizon</label>
+        <span class="horizon-val" id="horizonVal">5 years</span>
+      </div>
+      <input type="range" id="horizon" min="1" max="14" step="1" value="5" />
+    </div>
+  </section>
+
+  <section class="card verdict" aria-live="polite" aria-label="Verdict">
+    <p class="big" id="verdictBig"></p>
+    <p class="sub" id="verdictSub"></p>
+  </section>
+
+  <section class="card" aria-label="Results">
+    <h2>The numbers</h2>
+    <div class="stats">
+      <div class="stat">
+        <p class="k">Your alternative, at maturity</p>
+        <p class="v" id="statFv"></p>
+      </div>
+      <div class="stat">
+        <p class="k">Rolling windows where BTC won</p>
+        <p class="v" id="statBeat"></p>
+        <p class="s" id="statBeatSub"></p>
+      </div>
+      <div class="stat">
+        <p class="k">BTC median CAGR</p>
+        <p class="v" id="statMed"></p>
+      </div>
+      <div class="stat">
+        <p class="k">BTC CAGR range (worst &ndash; best)</p>
+        <p class="v"><small><span id="statMin"></span> &ndash; <span id="statMax"></span></small></p>
+      </div>
+    </div>
+  </section>
+
+  <section class="card" aria-label="Chart">
+    <h2 id="chartTitle">BTC CAGR, every rolling window</h2>
+    <svg id="chart" viewBox="0 0 640 360" role="img" aria-label="Dot chart of Bitcoin CAGR for each rolling window"></svg>
+    <div class="legend">
+      <span><span class="dot" style="background:var(--beat);"></span>BTC beat your return</span>
+      <span><span class="dot" style="background:var(--miss);"></span>BTC missed your return</span>
+      <span><span class="sw"></span>Your expected return</span>
+    </div>
+  </section>
+
+  <section class="card note" aria-label="Methodology and data">
+    <h2>How this works</h2>
+    <p>For your chosen horizon of N years, we take <em>every</em> rolling N-year window in the
+       data (for example 2012&ndash;2017, 2013&ndash;2018, and so on), compute the compound annual
+       growth rate of Bitcoin in each window, and count how often it beat your expected return.
+       That count is the hurdle: the percentage of historical periods your alternative would
+       have had to beat.</p>
+    <p>BTC prices are approximate year-end closes, snapshot through September 2026.
+       The final data point is September 2026, not a full year-end.</p>
+    <details>
+      <summary>See the price data</summary>
+      <table>
+        <tr><th>Point</th><th>BTC (USD)</th></tr>
+        <tr><td>2012</td><td>$13</td></tr>
+        <tr><td>2013</td><td>$750</td></tr>
+        <tr><td>2014</td><td>$320</td></tr>
+        <tr><td>2015</td><td>$430</td></tr>
+        <tr><td>2016</td><td>$960</td></tr>
+        <tr><td>2017</td><td>$13,850</td></tr>
+        <tr><td>2018</td><td>$3,740</td></tr>
+        <tr><td>2019</td><td>$7,200</td></tr>
+        <tr><td>2020</td><td>$29,000</td></tr>
+        <tr><td>2021</td><td>$47,000</td></tr>
+        <tr><td>2022</td><td>$16,500</td></tr>
+        <tr><td>2023</td><td>$42,000</td></tr>
+        <tr><td>2024</td><td>$93,000</td></tr>
+        <tr><td>2025</td><td>$88,000</td></tr>
+        <tr><td>Sep 2026</td><td>$84,055</td></tr>
+      </table>
+    </details>
+  </section>
+
+  <footer>
+    <p>Educational tool only. Price data is approximate. Past performance does not predict
+       future results. Nothing on this page is investment advice.</p>
+  </footer>
+
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  // Approximate BTC year-end closes (USD), snapshot through September 2026.
+  var BTC = [
+    {label:"2012", price:13},
+    {label:"2013", price:750},
+    {label:"2014", price:320},
+    {label:"2015", price:430},
+    {label:"2016", price:960},
+    {label:"2017", price:13850},
+    {label:"2018", price:3740},
+    {label:"2019", price:7200},
+    {label:"2020", price:29000},
+    {label:"2021", price:47000},
+    {label:"2022", price:16500},
+    {label:"2023", price:42000},
+    {label:"2024", price:93000},
+    {label:"2025", price:88000},
+    {label:"Sep 2026", price:84055}
+  ];
+
+  function $(id){ return document.getElementById(id); }
+
+  function median(a){
+    var s = a.slice().sort(function(x,y){ return x - y; });
+    var m = Math.floor(s.length / 2);
+    return (s.length % 2) ? s[m] : (s[m-1] + s[m]) / 2;
+  }
+
+  function fmtPct(v){
+    var p = v * 100;
+    var d = Math.abs(p) >= 100 ? 0 : 1;
+    return p.toFixed(d) + "%";
+  }
+
+  function fmtMoney(v){
+    return "$" + Math.round(v).toLocaleString("en-US");
+  }
+
+  // Every rolling N-year window in the dataset.
+  function windowsFor(n){
+    var out = [];
+    for (var i = 0; i + n < BTC.length; i++){
+      var a = BTC[i], b = BTC[i + n];
+      out.push({
+        label: a.label + " \u2192 " + b.label,
+        start: a.label,
+        cagr: Math.pow(b.price / a.price, 1 / n) - 1
+      });
+    }
+    return out;
+  }
+
+  // Symmetric log transform so -90%..+5000% stays readable on one axis.
+  function t(v){ return (v < 0 ? -1 : 1) * Math.log10(1 + Math.abs(v)); }
+
+  function draw(n, hurdle, wins){
+    var NS = "http://www.w3.org/2000/svg";
+    var svg = $("chart");
+    while (svg.firstChild) svg.removeChild(svg.firstChild);
+
+    var W = 640, H = 360, L = 66, R = 16, T = 16, B = 46;
+    var pw = W - L - R, ph = H - T - B;
+
+    var raw = wins.map(function(w){ return w.cagr; }).concat([hurdle]);
+    var tvals = raw.map(t);
+    var lo = Math.min.apply(null, tvals), hi = Math.max.apply(null, tvals);
+    if (hi - lo < 1e-9){ hi += 0.1; lo -= 0.1; }
+    var pad = (hi - lo) * 0.08; hi += pad; lo -= pad;
+
+    function Y(v){ return T + (hi - t(v)) / (hi - lo) * ph; }
+    function X(i){ return L + (i + 0.5) / wins.length * pw; }
+
+    function el(name, attrs, text){
+      var node = document.createElementNS(NS, name);
+      for (var k in attrs) node.setAttribute(k, attrs[k]);
+      if (text != null) node.textContent = text;
+      svg.appendChild(node);
+      return node;
+    }
+
+    // Gridlines + axis labels
+    var cands = [-95,-90,-75,-50,-25,0,25,50,75,100,150,200,300,500,1000,2000,5000];
+    var rmin = Math.min.apply(null, raw), rmax = Math.max.apply(null, raw);
+    var ticks = cands.filter(function(c){
+      var v = c / 100; return v >= rmin && v <= rmax;
+    });
+    if (ticks.indexOf(0) < 0) ticks.push(0);
+    ticks.sort(function(a,b){ return a - b; });
+    ticks.forEach(function(c){
+      var v = c / 100, y = Y(v);
+      el("line", {x1:L, x2:W-R, y1:y, y2:y,
+        stroke: v === 0 ? "#9aa3b2" : "#e8ecf2",
+        "stroke-width": v === 0 ? 1.5 : 1});
+      el("text", {x:L-8, y:y+4, "text-anchor":"end",
+        "font-size":"11", fill:"#5d6b7f"}, c + "%");
+    });
+
+    // Hurdle line
+    var hy = Y(hurdle);
+    el("line", {x1:L, x2:W-R, y1:hy, y2:hy,
+      stroke:"#f7931a", "stroke-width":2.5, "stroke-dasharray":"8 5"});
+    el("text", {x:W-R, y:hy-8, "text-anchor":"end",
+      "font-size":"12", "font-weight":"700", fill:"#f7931a"},
+      "your " + fmtPct(hurdle));
+
+    // Dots, one per window
+    wins.forEach(function(w, i){
+      var c = document.createElementNS(NS, "circle");
+      c.setAttribute("cx", X(i));
+      c.setAttribute("cy", Y(w.cagr));
+      c.setAttribute("r", 7);
+      c.setAttribute("fill", w.cagr > hurdle ? "#1a7f37" : "#9aa3b2");
+      var ti = document.createElementNS(NS, "title");
+      ti.textContent = w.label + ": " + fmtPct(w.cagr) + " CAGR";
+      c.appendChild(ti);
+      svg.appendChild(c);
+    });
+
+    // X labels (window start years)
+    var step = wins.length > 8 ? 2 : 1;
+    wins.forEach(function(w, i){
+      if (i % step !== 0) return;
+      var x = X(i), y = H - B + 24;
+      el("text", {x:x, y:y, "text-anchor":"end", "font-size":"10",
+        fill:"#5d6b7f", transform:"rotate(-35 " + x + " " + y + ")"}, w.start);
+    });
+  }
+
+  function recalc(){
+    var principal = Math.max(0, parseFloat($("principal").value) || 0);
+    var retPct = parseFloat($("ret").value) || 0;
+    var n = parseInt($("horizon").value, 10) || 5;
+
+    $("horizonVal").textContent = n + (n === 1 ? " year" : " years");
+    $("chartTitle").textContent = "BTC CAGR, every rolling " + n + "-year window";
+
+    var r = retPct / 100;
+    var wins = windowsFor(n);
+    var cagrs = wins.map(function(w){ return w.cagr; })
+                    .sort(function(a,b){ return a - b; });
+    var mn = cagrs[0], mx = cagrs[cagrs.length - 1], md = median(cagrs);
+    var beat = wins.filter(function(w){ return w.cagr > r; }).length;
+    var beatPct = Math.round(beat / wins.length * 100);
+    var fv = principal * Math.pow(1 + r, n);
+    var btcMedFv = principal * Math.pow(1 + md, n);
+
+    $("verdictBig").textContent =
+      "In " + beatPct + "% of " + n + "-year periods, Bitcoin beat a " +
+      retPct + "% annual return.";
+    $("verdictSub").textContent =
+      "Your alternative turns " + fmtMoney(principal) + " into " + fmtMoney(fv) +
+      ". Bitcoin's median outcome over the same span would have turned it into " +
+      fmtMoney(btcMedFv) + " (median " + n + "-year CAGR: " + fmtPct(md) + ").";
+
+    $("statFv").textContent = fmtMoney(fv);
+    $("statBeat").textContent = beatPct + "%";
+    $("statBeatSub").textContent = beat + " of " + wins.length + " rolling windows";
+    $("statMed").textContent = fmtPct(md);
+    $("statMin").textContent = fmtPct(mn);
+    $("statMax").textContent = fmtPct(mx);
+
+    draw(n, r, wins);
+  }
+
+  ["principal", "ret", "horizon"].forEach(function(id){
+    $(id).addEventListener("input", recalc);
+  });
+  recalc();
+})();
+</script>
+</body>
+</html>
